@@ -1,4 +1,19 @@
-readme.md
+# SecOps Box Automation
+**An Ansible-driven provisioner for hardened Offensive Security environments.**
+
+## Overview
+This repository contains a streamlined Ansible playbook to transform a vanilla Kali Linux (or Debian-based) installation into a fully-equipped, structured SecOps workstation. Designed for reproducibility, it automates the deployment of the essential offensive security tools, shell customizations and author-curated selections from the 2025 market.
+
+## Tactical Features
+* **System Lifecycle:** Automates `dist-upgrade` and core dependency management.
+* **Integrated Tooling:** Auto-provisions industry-standard suites (`Impacket`, `Bloodhound`, `EAPHammer`, etc.) into `/opt`.
+* **Environment Optimization:** Customizes `zsh` and developer workflows for efficiency during time-sensitive engagements (e.g., OSCP/HTB).
+* **Idempotent Design:** Built to be run multiple times without degrading system state.
+
+## Usage
+```bash
+ansible-playbook -K main.yml
+
 ----
 
 # hypervisor setup
