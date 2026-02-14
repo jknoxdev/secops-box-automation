@@ -21,6 +21,7 @@ on mac, the regular UTM will also need vagrant installed
 
 
 * if needed *
+
 ```
 brew install --cask utm
 ```
@@ -32,7 +33,8 @@ vagrant plugin install vagrant-utm
 
 then add in the ruby code for the vagrant file at the vagrant directory
 
-cp the following json to the vm directory: 
+cp the following json to the vm directory:
+
 ```
 {
   "provider": "utm"
