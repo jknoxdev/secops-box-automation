@@ -1,0 +1,357 @@
+---
+# Kali Linux OSCP Provisioning Playbook
+# Usage: ansible-playbook kali-provision.yml --ask-become-pass
+
+- name: Provision Kali Linux for OSCP/Penetration Testing
+  hosts: kali
+  become: yes
+  gather_facts: yes
+  vars_files: 
+    - ~/vaults/nullsec-ansible.yaml
+  vars:
+    username: "jtk"
+    home_dir: "/home/jtk"
+    static_ip: "{{ ansible_host }}" 
+    gateway: "{{ ansible_host_gw }}" 
+    dns_server: "{{ ansible_host_dns }}"
+    interface: "eth0" 
+    allow_world_readable_tmpfiles: true
+    
+  tasks:
+    - name: Update and upgrade all packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: Install essential tools and dependencies
+      apt:
+        name:
+          # System utilities
+          - curl
+          - wget
+          - git
+          - vim
+          - fastfetch
+          - tmux
+          - htop
+          - btop
+          - tree
+          - jq
+          - mtr
+          - zsh
+          - fonts-powerline
+          - fonts-firacode
+          - python3-pip
+          - python3-venv
+          - build-essential
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - net-tools
+          # Kali meta-packages
+          - kali-tools-top10
+          - kali-tools-web
+          - kali-tools-exploitation
+          - kali-tools-information-gathering
+          - kali-tools-wireless
+          # Additional pentest tools
+          - nmap
+          - wireshark
+          - burpsuite
+          - metasploit-framework
+          - sqlmap
+          - nikto
+          - dirb
+          - gobuster
+          - hydra
+          - john
+          - hashcat
+          - aircrack-ng
+          - ettercap-text-only
+          - ettercap-graphical
+          - responder
+          - enum4linux
+          - smbclient
+          - crackmapexec
+          - impacket-scripts
+          - cherrytree
+          - ranger
+          # Network tools
+          - netcat-traditional
+          - socat
+          - tcpdump
+          - nload
+          - openvpn
+          - proxychains4
+          # Sync tools
+          - syncthing
+          - fzf
+          - neovim
+          - alacritty
+          - ncdu
+        state: present
+
+    - name: Install Rust and Cargo
+      shell: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      args:
+        creates: "{{ home_dir }}/.cargo/bin/cargo"
+      become: yes
+      become_user: "{{ username }}"
+
+    - name: Source Rust environment
+      lineinfile:
+        path: "/home/{{ username }}/.bashrc"  # Use actual user
+        line: 'source $HOME/.cargo/env'
+        create: yes
+      become: yes
+      become_user: "{{ username }}"
+
+    - name: Install Rust-based security tools
+      shell: |
+        source {{ home_dir }}/.cargo/env
+        cargo install {{ item }}
+      args:
+        executable: /bin/bash
+      loop:
+        - rustscan
+        - ripgrep
+        - fd-find
+        - bat
+        - exa
+        - tokei
+        - bandwhich
+        - cerbero
+        - feroxbuster     # Web content discovery (ADD THIS)
+        - bottom          # System monitor (btm command)
+        - procs           # Better ps
+        - sd              # Better sed
+        # - dust            # Better du (disk usage)
+        - zoxide          # Smarter cd (tracks frequently used dirs)
+        - starship        # Amazing shell prompt
+        # - gitui           # Terminal UI for git
+        - tealdeer        # Faster tldr (command examples)
+        - hyperfine       # Benchmarking tool
+        # - watchexec       # Watch files and execute commands
+        # - cargo-update    # Keep all cargo tools updated
+        - zellij          # my new favorite terminal emulator
+      become: yes
+      ignore_errors: yes
+      become_user: "{{ username }}"
+    
+    - name: Configure Rust environment in shell configs
+      blockinfile:
+        path: "/home/{{ username }}/{{ item }}"
+        block: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - Rust"
+        create: yes
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: '0644'
+      loop:
+        - .bashrc
+        - .zshrc
+      become: yes
+
+      #    - name: Install pipx system-wide (it's in apt)
+#      apt:
+#        name: pipx
+#        state: present
+#      become: yes
+#
+#    - name: Ensure pipx path
+#      command: pipx ensurepath
+#      become_user: username
+#      become: yes
+#
+#    - name: Install Python security tools with pipx
+#      command: pipx install {{ item }}
+#      loop:
+#        - pwntools
+#        - ropper
+#        - scapy
+#      become_user: username
+#      become: yes
+#      vars:
+#        allow_world_readable_tmpfiles: true
+#      ignore_errors: yes
+#
+#    - name: Install library packages in user venv
+#      pip:
+#        name:
+#          - requests
+#          - beautifulsoup4
+#        extra_args: --user
+#      become_user: username
+#      become: yes
+#      vars:
+#        allow_world_readable_tmpfiles: true
+#        
+    - name: Ensure pipx and cargo are in PATH
+      lineinfile:
+        path: "{{ home_dir }}/.bashrc"
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - 'export PATH="$PATH:{{ home_dir }}/.local/bin"'
+        - 'export PATH="$PATH:{{ home_dir }}/.cargo/bin"'
+
+
+
+    - name: Clone Powerlevel10k theme
+      git:
+        repo: 'https://github.com/romkatv/powerlevel10k.git'
+        dest: "{{ home_dir }}/.oh-my-zsh/custom/themes/powerlevel10k"
+        depth: 1
+      become: no
+
+    - name: Install zsh-autosuggestions
+      git:
+        repo: 'https://github.com/zsh-users/zsh-autosuggestions'
+        dest: "{{ home_dir }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+        depth: 1
+      become: no
+
+    - name: Install zsh-syntax-highlighting
+      git:
+        repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git'
+        dest: "{{ home_dir }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+        depth: 1
+      become: no
+
+    - name: Change default shell to zsh
+      user:
+        name: "{{ username }}"
+        shell: /bin/zsh
+
+    - name: Download MesloLGS fonts for Powerlevel10k
+      get_url:
+        url: "{{ item }}"
+        dest: "/usr/local/share/fonts/"
+        mode: '0644'
+      loop:
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+      ignore_errors: yes
+
+    - name: Update font cache
+      command: fc-cache -f -v
+      ignore_errors: yes
+
+    - name: Create OSCP workspace directories
+      file:
+        path: "{{ home_dir }}/{{ item }}"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: '0755'
+      loop:
+        - "machs"
+        - "machs/tools"
+        - "machs/exploits"
+        - "machs/wordlists"
+        - "machs/scripts"
+        - "machs/loot"
+        - "machs/notes"
+        - ".config/syncthing"
+        - ".config/nvim"
+
+
+    - name: Clone useful GitHub repositories
+      git:
+        repo: "{{ item.repo }}"
+        dest: "{{ home_dir }}/machs/tools/{{ item.name }}"
+        # version: main
+      become: no
+      loop:
+        - { repo: 'https://github.com/danielmiessler/SecLists.git', name: 'SecLists' }
+        - { repo: 'https://github.com/carlospolop/PEASS-ng.git', name: 'PEASS-ng' }
+        - { repo: 'https://github.com/rebootuser/LinEnum.git', name: 'LinEnum' }
+      ignore_errors: yes
+
+    - name: Configure tmux
+      copy:
+        dest: "{{ home_dir }}/.tmux.conf"
+        owner: "{{ username }}"
+        content: |
+          # Tmux configuration for pentest workflow
+          set -g mouse on
+          set -g history-limit 10000
+          set -g base-index 1
+          setw -g pane-base-index 1
+          
+          # Easy config reload
+          bind-key r source-file ~/.tmux.conf \; display-message "Config reloaded"
+          
+          # Better split commands
+          bind | split-window -h
+          bind - split-window -v
+          
+          # Status bar
+          set -g status-style bg=black,fg=white
+          set -g status-left '#[fg=green][#S] '
+          set -g status-right '#[fg=yellow]%Y-%m-%d %H:%M'
+
+    - name: Configure proxychains
+      lineinfile:
+        path: /etc/proxychains4.conf
+        regexp: '^socks4'
+        line: 'socks5 127.0.0.1 9050'
+        backup: yes
+
+    - name: Enable and start PostgreSQL for Metasploit
+      systemd:
+        name: postgresql
+        enabled: yes
+        state: started
+
+    - name: Initialize Metasploit database
+      shell: msfdb init
+      args:
+        creates: /usr/share/metasploit-framework/config/database.yml
+      ignore_errors: yes
+
+
+
+
+    - name: Update locate database
+      command: updatedb
+      async: 300
+      poll: 0
+
+
+    - name: Display completion message with SSH key
+      debug:
+        msg:
+         - "=========================================="
+         - "Kali Linux OSCP provisioning completed!"
+         - "=========================================="
+#         - "Static IP configured: {{ static_ip }}"
+#         - "Gateway: {{ gateway }}"
+#         - "DNS: {{ dns_server }}"
+#         - ""
+         - "Workspace created at: {{ home_dir }}/machs"
+#         - "Cheatsheet: {{ home_dir }}/machs/OSCP-CHEATSHEET.md"
+         - ""
+         - "Installed Rust tools:"
+         - "  - rustscan (fast port scanner)"
+         - "  - ripgrep, fd, bat, exa, tokei, bandwhich"
+         - ""
+#         - "SSH RSA Key Generated:"
+#         - "{{ ssh_public_key.content | b64decode }}"
+#         - ""
+         - "Syncthing Web UI: http://127.0.0.1:8384"
+         - ""
+         - "Next steps:"
+         - "1. Reboot to apply network settings"
+         - "2. Run 'p10k configure' to setup Powerlevel10k"
+         - "3. Set terminal font to 'MesloLGS NF'"
+         - "4. Configure Syncthing for ~/machs directory"
+         - "5. Review cheatsheet: cat ~/machs/OSCP-CHEATSHEET.md"
+         - "6. Start hacking OSCP boxes!"
+         - "=========================================="
