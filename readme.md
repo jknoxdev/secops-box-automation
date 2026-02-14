@@ -54,3 +54,7 @@ ansible-galaxy install -r requirements.yml --roles-path ./roles --force
 sudo whoami
 ansible-playbook -i inventory.yml main.yml
 ```
+
+
+-----
+*DISCLAIMER: For authorized security testing and educational purposes only.*
