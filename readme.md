@@ -2,7 +2,7 @@
 **An Ansible-driven provisioner for hardened Offensive Security environments.**
 
 ## Overview
-This repository contains a streamlined Ansible playbook to transform a vanilla Kali Linux (or Debian-based) installation into a fully-equipped, structured SecOps workstation. Designed for reproducibility, it automates the deployment of the essential offensive security tools, shell customizations and author-curated selections from the 2025 market.
+TAnsible playbook for automating my Kali Linux setup. Installs offensive security tools, configures shells, and sets up my preferred workflow.
 
 ## Tactical Features
 * **System Lifecycle:** Automates `dist-upgrade` and core dependency management.
