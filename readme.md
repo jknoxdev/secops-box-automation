@@ -13,7 +13,7 @@ Ansible playbook for automating my Kali Linux setup. Installs offensive security
 ## Usage
 ```bash
 ansible-playbook -K main.yml
-
+```
 ----
 
 # hypervisor setup
@@ -65,6 +65,7 @@ within the kali linux machine:
 install Ansible using pip pip3 install ansible.
 Clone this repo to your kali linux git clone.
 change you current working directory inside kali-build.
+
 ```bash
 ansible-galaxy collection install community.general
 ansible-galaxy install -r requirements.yml --roles-path ./roles --force
