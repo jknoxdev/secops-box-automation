@@ -2,7 +2,7 @@
 **An Ansible-driven provisioner for hardened Offensive Security environments.**
 
 ## Overview
-TAnsible playbook for automating my Kali Linux setup. Installs offensive security tools, configures shells, and sets up my preferred workflow.
+Ansible playbook for automating my Kali Linux setup. Installs offensive security tools, configures shells, and sets up my preferred workflow.
 
 ## Tactical Features
 * **System Lifecycle:** Automates `dist-upgrade` and core dependency management.
